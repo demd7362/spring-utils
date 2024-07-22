@@ -1,7 +1,9 @@
 package com.example.common.utils;
 
+import com.example.common.annotation.Excel;
 import lombok.SneakyThrows;
 import lombok.experimental.UtilityClass;
+import org.reflections.Reflections;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -10,16 +12,21 @@ import java.util.*;
 @UtilityClass
 public class ReflectionUtils {
     public static final Map<String, String> CLASS_MAP = new HashMap<>();
-//    static {
-//        Reflections reflections = new Reflections("com.example.smp.vo");
-//        Set<Class<? extends CommonVO>> subTypes = reflections.getSubTypesOf(CommonVO.class);
-//        for(Class<? extends CommonVO> subType : subTypes){
-//            CLASS_MAP.put(subType.getSimpleName(), subType.getName());
-//        }
-//    }
+    public static final Set<Class<?>> EXCEL_CLASSES = new HashSet<>();
+    static {
+        Reflections reflections = new Reflections("com.example.common.model");
+        Set<Class<?>> subTypes = reflections.getSubTypesOf(Object.class);
+        for(Class<?> subType : subTypes){
+            CLASS_MAP.put(subType.getSimpleName(), subType.getName());
+            boolean isExcelClass = subType.getAnnotation(Excel.class) != null;
+            if(isExcelClass){
+                EXCEL_CLASSES.add(subType);
+            }
+        }
+    }
 
-    public static Set<Field> getAllFields(Class<?> clazz) {
-        Set<Field> fields = new HashSet<>();
+    public static List<Field> getAllFields(Class<?> clazz) {
+        List<Field> fields = new ArrayList<>();
         Class<?> currentClass = clazz;
         while (currentClass != null) {
             fields.addAll(Arrays.asList(currentClass.getDeclaredFields()));
@@ -27,15 +34,15 @@ public class ReflectionUtils {
         }
         return fields;
     }
-    public static Set<Field> getOwnFields(Class<?> clazz){
-        return Set.of(clazz.getDeclaredFields());
+    public static List<Field> getOwnFields(Class<?> clazz){
+        return List.of(clazz.getDeclaredFields());
     }
 
 
     public static Map<Field, Object> getFieldMap(Object instance) {
         Map<Field, Object> fieldMap = new HashMap<>();
         if (instance != null) {
-            Set<Field> fields = getAllFields(instance.getClass());
+            List<Field> fields = getAllFields(instance.getClass());
             for (Field field : fields) {
                 field.setAccessible(true);
                 try {
@@ -81,8 +88,8 @@ public class ReflectionUtils {
         return targetClass.getDeclaredConstructor().newInstance();
     }
 
-    public static Set<Field> getAnnotatedFields(Class<?> clazz, Class<? extends Annotation> targetAnnotation){
-        Set<Field> fields = new HashSet<>();
+    public static List<Field> getAnnotatedFields(Class<?> clazz, Class<? extends Annotation> targetAnnotation){
+        List<Field> fields = new ArrayList<>();
         for (Field field : getAllFields(clazz)) {
             for (Annotation annotation : field.getDeclaredAnnotations()) {
                 if (annotation.annotationType() == targetAnnotation) {
